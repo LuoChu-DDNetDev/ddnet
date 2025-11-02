@@ -34,6 +34,7 @@ public:
 	void RemoveFriend(const char *pName, const char *pClan) override;
 	void RemoveFriend(int Index);
 	void Friends();
+	void SetFriendStarred(const char *pName, const char *pClan, bool Starred) override;
 };
 
 #endif

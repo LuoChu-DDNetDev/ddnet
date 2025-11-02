@@ -13,6 +13,7 @@ struct CFriendInfo
 	char m_aClan[MAX_CLAN_LENGTH];
 	unsigned m_NameHash;
 	unsigned m_ClanHash;
+	bool m_Starred;
 };
 
 class IFriends : public IInterface
@@ -36,6 +37,7 @@ public:
 
 	virtual void AddFriend(const char *pName, const char *pClan) = 0;
 	virtual void RemoveFriend(const char *pName, const char *pClan) = 0;
+	virtual void SetFriendStarred(const char *pName, const char *pClan, bool Starred) = 0;
 };
 
 #endif

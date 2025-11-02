@@ -1442,6 +1442,17 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 
 			const int FriendIndex = CurrentClient.m_FriendState == IFriends::FRIEND_PLAYER ? FRIEND_PLAYER_ON : FRIEND_CLAN_ON;
 			m_avFriends[FriendIndex].emplace_back(CurrentClient, pEntry);
+			// Update starred status from offline friend list
+			auto &OnlineFriend = m_avFriends[FriendIndex].back();
+			for(const auto &OfflineFriend : m_avFriends[FRIEND_OFF])
+			{
+				if((OfflineFriend.Name()[0] == '\0' || str_comp(OfflineFriend.Name(), CurrentClient.m_aName) == 0) && 
+					((OfflineFriend.Name()[0] != '\0' && g_Config.m_ClFriendsIgnoreClan) || str_comp(OfflineFriend.Clan(), CurrentClient.m_aClan) == 0))
+				{
+					OnlineFriend.SetStarred(OfflineFriend.IsStarred());
+					break;
+				}
+			}
 			const auto &&RemovalPredicate = [CurrentClient](const CFriendItem &Friend) {
 				return (Friend.Name()[0] == '\0' || str_comp(Friend.Name(), CurrentClient.m_aName) == 0) && ((Friend.Name()[0] != '\0' && g_Config.m_ClFriendsIgnoreClan) || str_comp(Friend.Clan(), CurrentClient.m_aClan) == 0);
 			};
@@ -1518,7 +1529,15 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 					continue;
 
 				const bool Inside = Ui()->HotItem() == Friend.ListItemId() || Ui()->HotItem() == Friend.RemoveButtonId() || Ui()->HotItem() == Friend.CommunityTooltipId() || Ui()->HotItem() == Friend.SkinTooltipId();
-				int ButtonResult = Ui()->DoButtonLogic(Friend.ListItemId(), 0, &Rect, BUTTONFLAG_LEFT);
+				int ButtonResult = Ui()->DoButtonLogic(Friend.ListItemId(), 0, &Rect, BUTTONFLAG_LEFT | BUTTONFLAG_RIGHT);
+
+				// Handle right-click to toggle star status
+				if(ButtonResult == 2)
+				{
+					GameClient()->Friends()->SetFriendStarred(Friend.Name(), Friend.Clan(), !Friend.IsStarred());
+					FriendlistOnUpdate();
+					ButtonResult = 0;
+				}
 
 				if(Friend.ServerInfo())
 				{
@@ -1570,7 +1589,19 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 				}
 				Rect.HSplitTop(11.0f, &NameLabel, &ClanLabel);
 
-				// name
+				// name with star indicator if starred
+				if(Friend.IsStarred())
+				{
+					CUIRect StarIcon;
+					NameLabel.VSplitLeft(11.0f, &StarIcon, &NameLabel);
+					TextRender()->TextColor(ColorRGBA(1.0f, 0.84f, 0.0f, 1.0f)); // Gold color
+					TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+					TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
+					Ui()->DoLabel(&StarIcon, FONT_ICON_STAR, StarIcon.h * CUi::ms_FontmodHeight, TEXTALIGN_ML);
+					TextRender()->SetRenderFlags(0);
+					TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+					TextRender()->TextColor(TextRender()->DefaultTextColor());
+				}
 				Ui()->DoLabel(&NameLabel, Friend.Name(), FontSize - 1.0f, TEXTALIGN_ML);
 
 				// clan

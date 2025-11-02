@@ -19,7 +19,11 @@ CFriends::CFriends()
 void CFriends::ConAddFriend(IConsole::IResult *pResult, void *pUserData)
 {
 	CFriends *pSelf = (CFriends *)pUserData;
+	// Support optional third parameter for starred status (backward compatibility)
+	bool Starred = pResult->NumArguments() >= 3 ? pResult->GetInteger(2) != 0 : false;
 	pSelf->AddFriend(pResult->GetString(0), pResult->GetString(1));
+	if(Starred)
+		pSelf->SetFriendStarred(pResult->GetString(0), pResult->GetString(1), true);
 }
 
 void CFriends::ConRemoveFriend(IConsole::IResult *pResult, void *pUserData)
@@ -47,13 +51,13 @@ void CFriends::Init(bool Foes)
 	{
 		if(Foes)
 		{
-			pConsole->Register("add_foe", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddFriend, this, "Add a foe");
+			pConsole->Register("add_foe", "s[name] ?s[clan] ?i[starred]", CFGFLAG_CLIENT, ConAddFriend, this, "Add a foe");
 			pConsole->Register("remove_foe", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConRemoveFriend, this, "Remove a foe");
 			pConsole->Register("foes", "", CFGFLAG_CLIENT, ConFriends, this, "List foes");
 		}
 		else
 		{
-			pConsole->Register("add_friend", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddFriend, this, "Add a friend");
+			pConsole->Register("add_friend", "s[name] ?s[clan] ?i[starred]", CFGFLAG_CLIENT, ConAddFriend, this, "Add a friend");
 			pConsole->Register("remove_friend", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConRemoveFriend, this, "Remove a friend");
 			pConsole->Register("friends", "", CFGFLAG_CLIENT, ConFriends, this, "List friends");
 		}
@@ -117,6 +121,7 @@ void CFriends::AddFriend(const char *pName, const char *pClan)
 	str_copy(m_aFriends[m_NumFriends].m_aClan, pClan);
 	m_aFriends[m_NumFriends].m_NameHash = NameHash;
 	m_aFriends[m_NumFriends].m_ClanHash = ClanHash;
+	m_aFriends[m_NumFriends].m_Starred = false;
 	++m_NumFriends;
 }
 
@@ -159,6 +164,21 @@ void CFriends::Friends()
 	}
 }
 
+void CFriends::SetFriendStarred(const char *pName, const char *pClan, bool Starred)
+{
+	unsigned NameHash = str_quickhash(pName);
+	unsigned ClanHash = str_quickhash(pClan);
+	for(int i = 0; i < m_NumFriends; ++i)
+	{
+		if((m_aFriends[i].m_NameHash == NameHash && !str_comp(m_aFriends[i].m_aName, pName)) &&
+			((g_Config.m_ClFriendsIgnoreClan && m_aFriends[i].m_aName[0]) || (m_aFriends[i].m_ClanHash == ClanHash && !str_comp(m_aFriends[i].m_aClan, pClan))))
+		{
+			m_aFriends[i].m_Starred = Starred;
+			return;
+		}
+	}
+}
+
 void CFriends::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
 {
 	CFriends *pSelf = (CFriends *)pUserData;
@@ -175,6 +195,10 @@ void CFriends::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 		pDst = aBuf + str_length(aBuf);
 		str_escape(&pDst, pSelf->m_aFriends[i].m_aClan, pEnd);
 		str_append(aBuf, "\"");
+		
+		// Append starred status if starred
+		if(pSelf->m_aFriends[i].m_Starred)
+			str_append(aBuf, " 1");
 
 		pConfigManager->WriteLine(aBuf);
 	}
