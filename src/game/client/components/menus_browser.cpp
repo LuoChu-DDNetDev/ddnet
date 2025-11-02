@@ -1541,7 +1541,11 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 
 				if(Friend.ServerInfo())
 				{
-					GameClient()->m_Tooltips.DoToolTip(Friend.ListItemId(), &Rect, Localize("Click to select server. Double click to join your friend."));
+					GameClient()->m_Tooltips.DoToolTip(Friend.ListItemId(), &Rect, Localize("Click to select server. Double click to join your friend. Right click to star/unstar."));
+				}
+				else
+				{
+					GameClient()->m_Tooltips.DoToolTip(Friend.ListItemId(), &Rect, Localize("Right click to star/unstar this friend."));
 				}
 				const ColorRGBA Color = PlayerBackgroundColor(FriendType == FRIEND_PLAYER_ON, FriendType == FRIEND_CLAN_ON, FriendType == FRIEND_OFF ? true : Friend.IsAfk(), Inside);
 				Rect.Draw(Color, IGraphics::CORNER_ALL, 5.0f);
