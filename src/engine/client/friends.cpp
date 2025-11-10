@@ -195,7 +195,7 @@ void CFriends::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 		pDst = aBuf + str_length(aBuf);
 		str_escape(&pDst, pSelf->m_aFriends[i].m_aClan, pEnd);
 		str_append(aBuf, "\"");
-		
+
 		// Append starred status if starred
 		if(pSelf->m_aFriends[i].m_Starred)
 			str_append(aBuf, " 1");
