@@ -348,6 +348,7 @@ protected:
 		int m_FriendState;
 		bool m_IsPlayer;
 		bool m_IsAfk;
+		bool m_Starred;
 		// skin info 0.6
 		char m_aSkin[MAX_SKIN_LENGTH];
 		bool m_CustomSkinColors;
@@ -363,6 +364,7 @@ protected:
 			m_pServerInfo(nullptr),
 			m_IsPlayer(false),
 			m_IsAfk(false),
+			m_Starred(pFriendInfo->m_Starred),
 			m_CustomSkinColors(false),
 			m_CustomSkinColorBody(0),
 			m_CustomSkinColorFeet(0)
@@ -383,6 +385,7 @@ protected:
 			m_FriendState(CurrentClient.m_FriendState),
 			m_IsPlayer(CurrentClient.m_Player),
 			m_IsAfk(CurrentClient.m_Afk),
+			m_Starred(false),
 			m_CustomSkinColors(CurrentClient.m_CustomSkinColors),
 			m_CustomSkinColorBody(CurrentClient.m_CustomSkinColorBody),
 			m_CustomSkinColorFeet(CurrentClient.m_CustomSkinColorFeet)
@@ -404,6 +407,8 @@ protected:
 		int FriendState() const { return m_FriendState; }
 		bool IsPlayer() const { return m_IsPlayer; }
 		bool IsAfk() const { return m_IsAfk; }
+		bool IsStarred() const { return m_Starred; }
+		void SetStarred(bool Starred) { m_Starred = Starred; }
 		// 0.6 skin
 		const char *Skin() const { return m_aSkin; }
 		bool CustomSkinColors() const { return m_CustomSkinColors; }
@@ -421,6 +426,10 @@ protected:
 
 		bool operator<(const CFriendItem &Other) const
 		{
+			// Starred friends come first
+			if(m_Starred != Other.m_Starred)
+				return m_Starred;
+			// Then sort by name and clan
 			const int Result = str_comp_nocase(m_aName, Other.m_aName);
 			return Result < 0 || (Result == 0 && str_comp_nocase(m_aClan, Other.m_aClan) < 0);
 		}
